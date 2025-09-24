@@ -11,7 +11,7 @@ use rustc_data_structures::fx::FxHashSet;
 use rustc_index::Idx;
 use rustc_middle::mir::visit::Visitor;
 use rustc_middle::mir::{Body, HasLocalDecls, Local, Location, Place};
-use rustc_middle::ty::{Instance, TyCtxt};
+use rustc_middle::ty::{Instance, TyCtxt, TyKind};
 
 use petgraph::visit::IntoNodeReferences;
 
@@ -78,7 +78,7 @@ impl<'tcx> UseAfterFreeDetector<'tcx> {
         body.local_decls
             .iter_enumerated()
             .filter_map(|(local, local_decl)| {
-                if local_decl.ty.is_unsafe_ptr() {
+                if let TyKind::RawPtr(..) = local_decl.ty.kind() {
                     Some(local)
                 } else {
                     None
@@ -121,10 +121,16 @@ fn collect_raw_ptrs_escape_to_global<'tcx>(
         })
         .flat_map(|(ptr, ptes)| ptes.iter().map(|pte| (pte, ptr.clone())))
         .filter_map(|(pte, ptr)| match pte {
-            ConstraintNode::Alloc(place)
-                if place.local < local_end && place.ty(body, tcx).ty.is_unsafe_ptr() =>
-            {
-                Some((ConstraintNode::Place(*place), ptr))
+            ConstraintNode::Alloc(place) => {
+                if place.local < local_end {
+                    if let TyKind::RawPtr(..) = place.ty(body, tcx).ty.kind() {
+                        Some((ConstraintNode::Place(*place), ptr))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
             }
             _ => None,
         })
@@ -195,9 +201,10 @@ fn detect_escape_to_return_or_param<'tcx>(
                         alias_with_params.push(pte)
                     } else if pte.local < local_end
                         && pte.projection.is_empty()
-                        && pte.ty(body, tcx).ty.is_unsafe_ptr()
                     {
-                        alias_with_raw_ptrs.push(pte)
+                        if let TyKind::RawPtr(..) = pte.ty(body, tcx).ty.kind() {
+                            alias_with_raw_ptrs.push(pte)
+                        }
                     }
                 }
                 _ => continue,
