@@ -3,8 +3,6 @@ Statically detect memory, concurrency bugs and possible panic locations for Rust
 
 ## Introduction
 
-This project, "lockbud", is the artifact of the research paper ["Understanding and Detecting Real-World Safety Issues in Rust"](https://songlh.github.io/paper/rust-tse.pdf), published in TSE'24. It builds upon our previous work ["Understanding Memory and Thread Safety Practices and Issues in Real-World Rust Programs"](https://songlh.github.io/paper/rust-study.pdf), published in PLDI'20.
-
 The project includes detectors for the following types of issues:
 
 - Concurrency Bugs
@@ -19,11 +17,6 @@ The project includes detectors for the following types of issues:
     - Invalid-Free (not appeared in paper)
 - Panic Locations (use `-k panic`)
 
-The `Data` directory contains two Excel files:
-
-- BugStudy.xlsx: Records the results of the research study.
-- BugReport.xlsx: Records the experimental results.
-
 ## Announcements
 
 The codebase was implemented quickly, and I plan to refactor it in the future. The todo list is in #58.
@@ -35,12 +28,12 @@ The deadlock detectors (double-lock and conflicting-lock-order) perform better t
 To reduce the detectors' overhead, I did not introduce SMTs or other expensive analyses. As a result, the panic location detector may report nearly all the panic locations, making it less useful. I hope that a new, unified static analysis framework for Rust will emerge soon to address these limitations.
 
 ## Install
-Currently supports rustc nightly-2024-12-01 (Thanks to @mokhaled2992).
+Currently supports rustc nightly-2025-06-01.
 ```
 $ git clone https://github.com/BurtonQin/lockbud.git
 $ cd lockbud
-$ rustup +nightly-2025-02-01 component add rust-src rustc-dev llvm-tools-preview
-$ cargo +nightly-2025-02-01 install --path .
+$ rustup +nightly-2025-06-01 component add rust-src rustc-dev llvm-tools-preview
+$ cargo +nightly-2025-06-01 install --path .
 ```
 
 Note that you must use the same rustc nightly version as lockbud to detect your project!
